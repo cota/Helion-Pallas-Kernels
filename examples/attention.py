@@ -54,7 +54,7 @@ def _flash_attn_kernel(
       k = k_tile_ref[0, 0]
       v = v_tile_ref[0, 0]
       for h in range(num_q_per_kv):
-        q = q_ref[0, h]
+        q = q_ref[0, h] * sm_scale_log2
         s = jax.lax.dot_general(
             q, k, TRANS_B_DIM_NUMBERS, preferred_element_type=jnp.float32)
 
@@ -68,8 +68,8 @@ def _flash_attn_kernel(
         l_prev = l_scratch_ref[h]
         m_curr = jnp.max(s, axis=1)[:, None]
         m_next = jnp.maximum(m_prev, m_curr)
-        p = jnp.exp2(sm_scale_log2 * (s - jnp.tile(m_next, (1, block_k_repeats))))
-        exp_m_diff = jnp.exp2(sm_scale_log2 * (m_prev - m_next))
+        p = jnp.exp2(s - jnp.tile(m_next, (1, block_k_repeats)))
+        exp_m_diff = jnp.exp2(m_prev - m_next)
         l_scratch_ref[h] = jnp.sum(p, axis=1)[:, None] + exp_m_diff * l_prev
         m_scratch_ref[h] = m_next
         acc = acc_scratch_ref[h]
@@ -94,7 +94,7 @@ def _flash_attn_kernel(
       k = k_tile_ref[0, 0]
       v = v_tile_ref[0, 0]
       for h in range(num_q_per_kv):
-        q = q_ref[0, h]
+        q = q_ref[0, h] * sm_scale_log2
         s = jax.lax.dot_general(
             q, k, TRANS_B_DIM_NUMBERS, preferred_element_type=jnp.float32)
 
@@ -102,8 +102,8 @@ def _flash_attn_kernel(
         l_prev = l_scratch_ref[h]
         m_curr = jnp.max(s, axis=1)[:, None]
         m_next = jnp.maximum(m_prev, m_curr)
-        p = jnp.exp2(sm_scale_log2 * (s - jnp.tile(m_next, (1, block_k_repeats))))
-        exp_m_diff = jnp.exp2(sm_scale_log2 * (m_prev - m_next))
+        p = jnp.exp2(s - jnp.tile(m_next, (1, block_k_repeats)))
+        exp_m_diff = jnp.exp2(m_prev - m_next)
         l_scratch_ref[h] = jnp.sum(p, axis=1)[:, None] + exp_m_diff * l_prev
         m_scratch_ref[h] = m_next
         acc = acc_scratch_ref[h]
