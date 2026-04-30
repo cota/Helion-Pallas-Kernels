@@ -129,7 +129,7 @@ def _flash_attn_kernel(
     o_ref[0, h] = (acc * l_broadcast(1.0 / l_val)).astype(o_ref.dtype)
 
 
-def flash_attention_oob(q, k, v, *, sm_scale, block_q=1024, block_k=1024,
+def flash_attention_oob(q, k, v, *, sm_scale, block_q=8192, block_k=512,
                         causal=False):
   """OOB flash attention. Works for any head_dim multiple of 128."""
   batch_size, num_q_heads, seq_q, head_dim = q.shape
