@@ -207,4 +207,4 @@ median_s = sorted(times)[50]
 ms = median_s * 1000
 tflops = attn_flops / median_s / 1e12
 
-print('tflops',tflops)
+print('tflops',tflops, "ms", ms)
