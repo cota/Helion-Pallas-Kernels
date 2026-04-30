@@ -180,31 +180,35 @@ def flash_attention_oob(q, k, v, *, sm_scale, block_q=1024, block_k=1024,
     out = out[..., :head_dim]
   return out
 
-B, H, S, D = 8, 32, 8192, 128
-sm_scale = 1.0 / math.sqrt(D)
-dtype = jnp.bfloat16
+def main(_):
+  B, H, S, D = 8, 32, 8192, 128
+  sm_scale = 1.0 / math.sqrt(D)
+  dtype = jnp.bfloat16
 
-key = jax.random.PRNGKey(42)
-k1, k2, k3 = jax.random.split(key, 3)
-q_test = jax.random.normal(k1, (B, H, S, D), dtype=dtype)
-k_test = jax.random.normal(k2, (B, H, S, D), dtype=dtype)
-v_test = jax.random.normal(k3, (B, H, S, D), dtype=dtype)
-
-
-attn_flops = 4 * B * H * S * S * D
+  key = jax.random.PRNGKey(42)
+  k1, k2, k3 = jax.random.split(key, 3)
+  q_test = jax.random.normal(k1, (B, H, S, D), dtype=dtype)
+  k_test = jax.random.normal(k2, (B, H, S, D), dtype=dtype)
+  v_test = jax.random.normal(k3, (B, H, S, D), dtype=dtype)
 
 
-jit_fn = jax.jit(functools.partial(flash_attention_oob, sm_scale=sm_scale))
-jit_fn(q_test, k_test, v_test).block_until_ready()
-jit_fn(q_test, k_test, v_test).block_until_ready()
-jit_fn(q_test, k_test, v_test).block_until_ready()
-times = []
-for _ in range(100):
-    t0 = time.perf_counter()
-    jit_fn(q_test, k_test, v_test).block_until_ready()
-    times.append(time.perf_counter() - t0)
-median_s = sorted(times)[50]
-ms = median_s * 1000
-tflops = attn_flops / median_s / 1e12
+  attn_flops = 4 * B * H * S * S * D
 
-print('tflops',tflops, "ms", ms)
+
+  jit_fn = jax.jit(functools.partial(flash_attention_oob, sm_scale=sm_scale))
+  jit_fn(q_test, k_test, v_test).block_until_ready()
+  jit_fn(q_test, k_test, v_test).block_until_ready()
+  jit_fn(q_test, k_test, v_test).block_until_ready()
+  times = []
+  for _ in range(100):
+      t0 = time.perf_counter()
+      jit_fn(q_test, k_test, v_test).block_until_ready()
+      times.append(time.perf_counter() - t0)
+  median_s = sorted(times)[50]
+  ms = median_s * 1000
+  tflops = attn_flops / median_s / 1e12
+
+  print('tflops',tflops, "ms", ms)
+
+if __name__ == "__main__":
+  app.run(main)
