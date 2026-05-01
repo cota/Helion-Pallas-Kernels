@@ -7,6 +7,7 @@ import os
 import time
 
 from absl import app
+from absl import flags
 import jax
 from jax.experimental import pallas as pl
 from jax.experimental.pallas import tpu as pltpu
@@ -21,6 +22,9 @@ if jax.devices()[0].platform == "cpu":
 MIN_BLOCK_SIZE = 128
 TRANS_B_DIM_NUMBERS = (((1,), (1,)), ((), ()))
 LOG2E = float(jnp.log2(jnp.e))
+
+_BLOCK_Q = flags.DEFINE_integer("block_q", 8192, "Block Q size")
+_BLOCK_K = flags.DEFINE_integer("block_k", 512, "Block K size")
 
 
 # ===========================================================================
@@ -129,7 +133,7 @@ def _flash_attn_kernel(
     o_ref[0, h] = (acc * l_broadcast(1.0 / l_val)).astype(o_ref.dtype)
 
 
-def flash_attention_oob(q, k, v, *, sm_scale, block_q=8192, block_k=512,
+def flash_attention_oob(q, k, v, *, sm_scale, block_q, block_k,
                         causal=False):
   """OOB flash attention. Works for any head_dim multiple of 128."""
   batch_size, num_q_heads, seq_q, head_dim = q.shape
@@ -195,7 +199,9 @@ def main(_):
   attn_flops = 4 * B * H * S * S * D
 
 
-  jit_fn = jax.jit(functools.partial(flash_attention_oob, sm_scale=sm_scale))
+  jit_fn = jax.jit(functools.partial(flash_attention_oob, sm_scale=sm_scale,
+                                     block_q=_BLOCK_Q.value,
+                                     block_k=_BLOCK_K.value))
   jit_fn(q_test, k_test, v_test).block_until_ready()
   jit_fn(q_test, k_test, v_test).block_until_ready()
   jit_fn(q_test, k_test, v_test).block_until_ready()
