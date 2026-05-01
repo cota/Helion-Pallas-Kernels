@@ -185,7 +185,7 @@ def flash_attention_oob(q, k, v, *, sm_scale, block_q, block_k,
   return out
 
 def main(_):
-  B, H, S, D = 8, 32, 8192, 128
+  B, H, S, D = 8, 32, 8192, 256
   sm_scale = 1.0 / math.sqrt(D)
   dtype = jnp.bfloat16
 
