@@ -63,6 +63,7 @@ class AttentionTest(jtu.JaxTestCase):
     self._test_attention(causal=causal, dtype=dtype)
 
   @parameterized.parameters(
+    (8192, 256),
     (8192, 512),
   )
   def test_attention_block(self, block_q, block_k):

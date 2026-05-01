@@ -24,7 +24,7 @@ TRANS_B_DIM_NUMBERS = (((1,), (1,)), ((), ()))
 LOG2E = float(jnp.log2(jnp.e))
 
 _BLOCK_Q = flags.DEFINE_integer("block_q", 8192, "Block Q size")
-_BLOCK_K = flags.DEFINE_integer("block_k", 512, "Block K size")
+_BLOCK_K = flags.DEFINE_integer("block_k", 256, "Block K size")
 
 
 # ===========================================================================
